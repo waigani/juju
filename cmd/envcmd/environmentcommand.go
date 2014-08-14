@@ -21,6 +21,7 @@ import (
 	"github.com/juju/juju/environs/configstore"
 	"github.com/juju/juju/juju"
 	"github.com/juju/juju/juju/osenv"
+	"github.com/juju/juju/network"
 	"github.com/juju/juju/state/api"
 )
 
@@ -170,6 +171,71 @@ func (c *EnvCommandBase) ConnectionEndpoint(refresh bool) (configstore.APIEndpoi
 	return info.APIEndpoint(), nil
 }
 
+<<<<<<< Updated upstream
+=======
+// SetBootstrapEndpointAddress writes the API endpoint address of the
+// bootstrap server into the connection information. This should only be run
+// once directly after Bootstrap. It assumes that there is just one instance
+// in the environment - the bootstrap instance.
+func (c *EnvCommandBase) SetBootstrapEndpointAddress(environ environs.Environ) error {
+	/*
+		instances, err := environ.AllInstances()
+		if err != nil {
+			return errors.Trace(err)
+		}
+		length := len(instances)
+		if length == 0 {
+			return errors.Errorf("expected one instance, got 0")
+		}
+		if length > 1 {
+			logger.Warningf("expected one instance, got %d", length)
+		}
+		bootstrapInstance := instances[0]
+		info, err := connectionInfoForName(c.envName)
+		if err != nil {
+			return errors.Annotate(err, "failed to get connection info")
+		}
+		// Don't use c.ConnectionEndpoint as it attempts to contact the state
+		// server if no addresses are found in connection info.
+		endpoint := info.APIEndpoint()
+		netAddrs, err := bootstrapInstance.Addresses()
+	*/
+	info, err := connectionInfoForName(c.envName)
+	if err != nil {
+		return errors.Annotate(err, "failed to get connection info")
+	}
+
+	// Don't use c.ConnectionEndpoint as it attempts to contact the state
+	// server if no addresses are found in connection info.
+	endpoint := info.APIEndpoint()
+	apiInfo, err := environs.APIInfo(environ)
+	if err != nil {
+		return err
+	}
+	addrs := apiInfo.Addrs
+	if err != nil {
+		return errors.Trace(err)
+	}
+	apiPort := environ.Config().APIPort()
+	addrs = make([]string, len(addrs))
+	var apiAddrs []string
+	for i, hp := range network.AddressesWithPort(addrs, apiPort) {
+		apiAddrs[i] = hp.NetAddr()
+	}
+	endpoint.Addresses = apiAddrs
+	writer, err := c.ConnectionWriter()
+	if err != nil {
+		return errors.Annotate(err, "failed to get connection writer")
+	}
+	writer.SetAPIEndpoint(endpoint)
+	err = writer.Write()
+	if err != nil {
+		return errors.Annotate(err, "failed to write API endpoint to connection info")
+	}
+	return nil
+}
+
+>>>>>>> Stashed changes
 // ConnectionWriter defines the methods needed to write information about
 // a given connection.  This is a subset of the methods in the interface
 // defined in configstore.EnvironInfo.

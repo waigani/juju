@@ -250,6 +250,13 @@ func (c *BootstrapCommand) Run(ctx *cmd.Context) (resultErr error) {
 		Constraints: c.Constraints,
 		Placement:   c.Placement,
 	})
+<<<<<<< Updated upstream
+=======
+	if err != nil {
+		return errors.Annotate(err, "failed to bootstrap environment")
+	}
+	return c.SetBootstrapEndpointAddress(environ)
+>>>>>>> Stashed changes
 }
 
 var uploadCustomMetadata = func(metadataDir string, env environs.Environ) error {
