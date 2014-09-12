@@ -598,6 +598,7 @@ func (st *State) parseTag(tag names.Tag) (string, string, error) {
 		coll = machinesC
 	case names.ServiceTag:
 		coll = servicesC
+		id = st.idForEnv(id)
 	case names.UnitTag:
 		coll = unitsC
 	case names.UserTag:
@@ -620,6 +621,19 @@ func (st *State) parseTag(tag names.Tag) (string, string, error) {
 	}
 	return coll, id, nil
 }
+
+// idForEnv returns the environment specific ID for the given ID.
+func (st *State) idForEnv(ID string) string {
+	return st.EnvironTag().Id() + ":" + ID
+}
+
+// NameFromEnvID extracts and returns the name from <uuid>:<name> formatted ids.
+// func NameFromEnvID(ID string) (string, error) {
+// 	if IsValidEnvID(ID) {
+// 		return strings.Split(ID, ":")[1], nil
+// 	}
+// 	return "", errors.Errorf("%q is not a valid ID", ID)
+// }
 
 // AddCharm adds the ch charm with curl to the state. bundleURL must
 // be set to a URL where the bundle for ch may be downloaded from. On
@@ -1057,16 +1071,17 @@ func (st *State) AddService(name, owner string, ch *Charm, networks []string) (s
 	if ch == nil {
 		return nil, errors.Errorf("charm is nil")
 	}
-	if exists, err := isNotDead(st.db, servicesC, name); err != nil {
-		return nil, errors.Trace(err)
-	} else if exists {
-		return nil, errors.Errorf("service already exists")
-	}
 	env, err := st.Environment()
 	if err != nil {
 		return nil, errors.Trace(err)
 	} else if env.Life() != Alive {
 		return nil, errors.Errorf("environment is no longer alive")
+	}
+	ID := st.idForEnv(name)
+	if exists, err := isNotDead(st.db, servicesC, ID); err != nil {
+		return nil, errors.Trace(err)
+	} else if exists {
+		return nil, errors.Errorf("service already exists")
 	}
 	if _, err := st.EnvironmentUser(ownerTag); err != nil {
 		return nil, errors.Trace(err)
@@ -1074,7 +1089,9 @@ func (st *State) AddService(name, owner string, ch *Charm, networks []string) (s
 	// Create the service addition operations.
 	peers := ch.Meta().Peers
 	svcDoc := &serviceDoc{
+		DocID:         ID,
 		Name:          name,
+		EnvUUID:       env.UUID(),
 		Series:        ch.URL().Series,
 		Subordinate:   ch.Meta().Subordinate,
 		CharmURL:      ch.URL(),
@@ -1100,7 +1117,7 @@ func (st *State) AddService(name, owner string, ch *Charm, networks []string) (s
 		},
 		{
 			C:      servicesC,
-			Id:     name,
+			Id:     ID,
 			Assert: txn.DocMissing,
 			Insert: svcDoc,
 		}}
@@ -1223,7 +1240,7 @@ func (st *State) Service(name string) (service *Service, err error) {
 		return nil, errors.Errorf("%q is not a valid service name", name)
 	}
 	sdoc := &serviceDoc{}
-	sel := bson.D{{"_id", name}}
+	sel := bson.D{{"_id", st.idForEnv(name)}}
 	err = services.Find(sel).One(sdoc)
 	if err == mgo.ErrNotFound {
 		return nil, errors.NotFoundf("service %q", name)
@@ -1421,7 +1438,7 @@ func (st *State) AddRelation(eps ...Endpoint) (r *Relation, err error) {
 			}
 			ops = append(ops, txn.Op{
 				C:      servicesC,
-				Id:     ep.ServiceName,
+				Id:     st.idForEnv(ep.ServiceName),
 				Assert: bson.D{{"life", Alive}, {"charmurl", ch.URL()}},
 				Update: bson.D{{"$inc", bson.D{{"relationcount", 1}}}},
 			})

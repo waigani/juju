@@ -277,3 +277,7 @@ func GetAllUpgradeInfos(st *State) ([]*UpgradeInfo, error) {
 	}
 	return out, nil
 }
+
+func IDForEnv(st *State, name string) string {
+	return st.idForEnv(name)
+}

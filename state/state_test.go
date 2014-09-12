@@ -2354,7 +2354,7 @@ func (s *StateSuite) TestParseServiceTag(c *gc.C) {
 	coll, id, err := state.ParseTag(s.State, svc.Tag())
 	c.Assert(err, gc.IsNil)
 	c.Assert(coll, gc.Equals, "services")
-	c.Assert(id, gc.Equals, svc.Name())
+	c.Assert(id, gc.Equals, s.State.IDForEnv(s.State, svc.Name()))
 }
 
 func (s *StateSuite) TestParseUnitTag(c *gc.C) {

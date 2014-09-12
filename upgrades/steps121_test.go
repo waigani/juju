@@ -21,6 +21,7 @@ func (s *steps121Suite) TestUpgradeOperationsContent(c *gc.C) {
 		"rename the user LastConnection field to LastLogin",
 		"add environment uuid to state server doc",
 		"add all users in state as environment users",
+		"prepend the environment UUID to the ID of all service docs",
 	}
 
 	upgradeSteps := upgrades.StepsFor121()

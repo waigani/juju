@@ -159,7 +159,7 @@ func (s *storeManagerStateSuite) setUpScenario(c *gc.C) (entities entityInfoSlic
 
 		add(&params.UnitInfo{
 			Name:      fmt.Sprintf("wordpress/%d", i),
-			Service:   wordpress.Name(),
+			Service:   wordpress.doc.Name,
 			Series:    m.Series(),
 			MachineId: m.Id(),
 			Ports:     []network.Port{},
@@ -961,6 +961,10 @@ func (s *storeManagerStateSuite) TestChanged(c *gc.C) {
 			},
 		},
 	} {
+		if test.change.C == "services" {
+			name := test.change.Id.(string)
+			test.change.Id = s.State.idForEnv(name)
+		}
 		c.Logf("test %d. %s", i, test.about)
 		b := newAllWatcherStateBacking(s.State)
 		all := multiwatcher.NewStore()

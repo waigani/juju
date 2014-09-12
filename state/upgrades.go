@@ -117,3 +117,42 @@ func AddEnvironmentUUIDToStateServerDoc(st *State) error {
 
 	return st.runTransaction(ops)
 }
+
+// AddEnvUUIDToServicesID prepends the environment UUID to the ID of all service docs.
+func AddEnvUUIDToServicesID(st *State) error {
+	env, err := st.Environment()
+	if err != nil {
+		return errors.Annotate(err, "failed to load environment")
+	}
+
+	var servicesSlice []serviceDoc
+	services, closer := st.getCollection(servicesC)
+	defer closer()
+
+	err = services.Find(bson.D{{"env-uuid", nil}, {"name", nil}}).All(&servicesSlice)
+	if err != nil {
+		return errors.Trace(err)
+	}
+	upgradesLogger.Debugf("adding env uuid %q", env.UUID())
+
+	uuid := env.UUID()
+	ops := []txn.Op{}
+	for _, service := range servicesSlice {
+		service.EnvUUID = uuid
+		service.Name = service.DocID
+		ops = append(ops,
+			[]txn.Op{{
+				C:      servicesC,
+				Id:     service.DocID,
+				Assert: txn.DocExists,
+				Remove: true,
+			}, {
+				C:      servicesC,
+				Id:     st.idForEnv(service.DocID),
+				Assert: txn.DocMissing,
+				Insert: service,
+			}}...)
+	}
+
+	return st.runTransaction(ops)
+}

@@ -178,14 +178,6 @@ func checkCreds(st *state.State, c params.Creds) (state.Entity, error) {
 		return nil, err
 	}
 
-	// For user logins, ensure the user is allowed to access the environment.
-	if user, ok := entity.Tag().(names.UserTag); ok {
-		_, err := st.EnvironmentUser(user)
-		if err != nil {
-			return nil, errors.Wrap(err, common.ErrBadCreds)
-		}
-	}
-
 	return entity, nil
 }
 

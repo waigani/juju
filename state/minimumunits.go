@@ -57,19 +57,23 @@ func (s *Service) SetMinUnits(minUnits int) (err error) {
 		if minUnits == service.doc.MinUnits {
 			return nil, jujutxn.ErrNoOperations
 		}
-		return setMinUnitsOps(service, minUnits), nil
+		opts, err := setMinUnitsOps(service, minUnits)
+		if err != nil {
+			return nil, errors.Trace(err)
+		}
+		return opts, nil
 	}
 	return s.st.run(buildTxn)
 }
 
 // setMinUnitsOps returns the operations required to set MinUnits on the
 // service and to create/update/remove the minUnits document in MongoDB.
-func setMinUnitsOps(service *Service, minUnits int) []txn.Op {
+func setMinUnitsOps(service *Service, minUnits int) ([]txn.Op, error) {
 	state := service.st
-	serviceName := service.Name()
+	serviceName := service.doc.Name
 	ops := []txn.Op{{
 		C:      servicesC,
-		Id:     serviceName,
+		Id:     state.idForEnv(serviceName),
 		Assert: isAliveDoc,
 		Update: bson.D{{"$set", bson.D{{"minunits", minUnits}}}},
 	}}
@@ -79,17 +83,17 @@ func setMinUnitsOps(service *Service, minUnits int) []txn.Op {
 			Id:     serviceName,
 			Assert: txn.DocMissing,
 			Insert: &minUnitsDoc{ServiceName: serviceName},
-		})
+		}), nil
 	}
 	if minUnits == 0 {
-		return append(ops, minUnitsRemoveOp(state, serviceName))
+		return append(ops, minUnitsRemoveOp(state, serviceName)), nil
 	}
 	if minUnits > service.doc.MinUnits {
 		op := minUnitsTriggerOp(state, serviceName)
 		op.Assert = txn.DocExists
-		return append(ops, op)
+		return append(ops, op), nil
 	}
-	return ops
+	return ops, nil
 }
 
 // minUnitsTriggerOp returns the operation required to increase the minimum

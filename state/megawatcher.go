@@ -219,7 +219,7 @@ func (svc *backingService) fixOwnerTag(env *Environment) string {
 }
 
 func (m *backingService) mongoId() interface{} {
-	return m.Name
+	return m.DocID
 }
 
 type backingRelation relationDoc
@@ -283,7 +283,7 @@ func (a *backingAnnotation) mongoId() interface{} {
 type backingStatus statusDoc
 
 func (s *backingStatus) updated(st *State, store *multiwatcher.Store, id interface{}) error {
-	parentId, ok := backingEntityIdForGlobalKey(id.(string))
+	parentId, ok := backingEntityIdForGlobalKey(st, id.(string))
 	if !ok {
 		return nil
 	}
@@ -324,7 +324,7 @@ func (a *backingStatus) mongoId() interface{} {
 type backingConstraints constraintsDoc
 
 func (s *backingConstraints) updated(st *State, store *multiwatcher.Store, id interface{}) error {
-	parentId, ok := backingEntityIdForGlobalKey(id.(string))
+	parentId, ok := backingEntityIdForGlobalKey(st, id.(string))
 	if !ok {
 		return nil
 	}
@@ -358,7 +358,7 @@ func (a *backingConstraints) mongoId() interface{} {
 type backingSettings map[string]interface{}
 
 func (s *backingSettings) updated(st *State, store *multiwatcher.Store, id interface{}) error {
-	parentId, url, ok := backingEntityIdForSettingsKey(id.(string))
+	parentId, url, ok := backingEntityIdForSettingsKey(st, id.(string))
 	if !ok {
 		return nil
 	}
@@ -398,9 +398,9 @@ func (a *backingSettings) mongoId() interface{} {
 // backingEntityIdForSettingsKey returns the entity id for the given
 // settings key. Any extra information in the key is returned in
 // extra.
-func backingEntityIdForSettingsKey(key string) (eid params.EntityId, extra string, ok bool) {
+func backingEntityIdForSettingsKey(st *State, key string) (eid params.EntityId, extra string, ok bool) {
 	if !strings.HasPrefix(key, "s#") {
-		eid, ok = backingEntityIdForGlobalKey(key)
+		eid, ok = backingEntityIdForGlobalKey(st, key)
 		return
 	}
 	key = key[2:]
@@ -416,7 +416,7 @@ func backingEntityIdForSettingsKey(key string) (eid params.EntityId, extra strin
 
 // backingEntityIdForGlobalKey returns the entity id for the given global key.
 // It returns false if the key is not recognized.
-func backingEntityIdForGlobalKey(key string) (params.EntityId, bool) {
+func backingEntityIdForGlobalKey(st *State, key string) (params.EntityId, bool) {
 	if len(key) < 3 || key[1] != '#' {
 		return params.EntityId{}, false
 	}
@@ -568,7 +568,6 @@ func (b *allWatcherStateBacking) GetAll(all *multiwatcher.Store) error {
 func (b *allWatcherStateBacking) Changed(all *multiwatcher.Store, change watcher.Change) error {
 	db, closer := b.st.newDB()
 	defer closer()
-
 	c, ok := b.collectionByName[change.C]
 	if !ok {
 		panic(fmt.Errorf("unknown collection %q in fetch request", change.C))
