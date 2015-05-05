@@ -819,6 +819,10 @@ func (st *State) ensureAvailabilityIntentions(info *StateServerInfo, placement [
 				intent.promote = append(intent.promote, m)
 			}
 			continue
+		} else if !m.HasVote() && m.WantsVote() {
+			// voting is still being added to the server, so keep it around.
+			intent.maintain = append(intent.maintain, m)
+			continue
 		}
 		if m.WantsVote() {
 			// The machine wants to vote, so we simply set novote and allow it
