@@ -15,6 +15,7 @@ import (
 	"github.com/juju/utils"
 	"github.com/juju/utils/set"
 	"gopkg.in/juju/charm.v5"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"gopkg.in/mgo.v2/txn"
 
@@ -1608,15 +1609,22 @@ func MigrateLastLoginAndLastConnection(st *State) error {
 		})
 	}
 
-	// 2. raw-write all that data to the new collections, overwriting everything
+	// 2. raw-write all that data to the new collections, overwriting
+	// everything.
+	//
+	// If a user accesses the API during the upgrade, a lastLoginDoc could
+	// already exist. In this is the case, we hit a duplicate key error, which
+	// we ignore. The insert becomes a no-op, keeping the new lastLoginDoc
+	// which will be more up-to-date than what's read in through the usersC
+	// collection.
 	if len(lastLoginDocs) > 0 {
-		if err := userLastLogins.Insert(lastLoginDocs...); err != nil {
+		if err := userLastLogins.Insert(lastLoginDocs...); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
 
 	if len(lastConnectionDocs) > 0 {
-		if err := envUserLastConnections.Insert(lastConnectionDocs...); err != nil {
+		if err := envUserLastConnections.Insert(lastConnectionDocs...); err != nil && !mgo.IsDup(err) {
 			return err
 		}
 	}
