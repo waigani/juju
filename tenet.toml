@@ -1,0 +1,16 @@
+# Common tenets for Go
+
+include = ""
+cascade = false
+
+[[tenet]]
+  name = "lingoreviews/space_after_forward_slash"
+  driver = "docker"
+  tag = ""
+  registry = ""
+
+[[tenet]]
+  name = "lingoreviews/unused_function_args"
+  driver = "docker"
+  tag = ""
+  registry = ""
