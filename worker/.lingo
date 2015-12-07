@@ -1,0 +1,63 @@
+cascade = true
+include = "*"
+template = ""
+
+[[tenet_group]]
+  name = "workers"
+  template = ""
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_onetombdone"
+    driver = "binary"
+    registry = "hub.docker.com"
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_leakytomb"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_react"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_callback"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_periodic"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_notombdead"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_tomb"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
+
+  [[tenet_group.tenet]]
+    name = "lingoreviews/juju_worker_simple"
+    driver = "binary"
+    registry = ""
+    tag = ""
+    [tenet_group.tenet.options]
