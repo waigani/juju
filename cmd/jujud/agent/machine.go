@@ -673,15 +673,13 @@ func (a *MachineAgent) startAPIWorkers(apiConn api.Connection) (_ worker.Worker,
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
-	var isEnvironManager, isUnitHoster, isNetworkManager bool
+	var isEnvironManager, isUnitHoster bool
 	for _, job := range entity.Jobs() {
 		switch job {
 		case multiwatcher.JobManageEnviron:
 			isEnvironManager = true
 		case multiwatcher.JobHostUnits:
 			isUnitHoster = true
-		case multiwatcher.JobManageNetworking:
-			isNetworkManager = true
 		case multiwatcher.JobManageStateDeprecated:
 			// Legacy environments may set this, but we ignore it.
 		default:
@@ -698,11 +696,6 @@ func (a *MachineAgent) startAPIWorkers(apiConn api.Connection) (_ worker.Worker,
 			worker.Stop(runner)
 		}
 	}()
-
-	envConfig, err := apiConn.Environment().EnvironConfig()
-	if err != nil {
-		return nil, fmt.Errorf("cannot read environment config: %v", err)
-	}
 
 	if !featureflag.Enabled(feature.DisableRsyslog) {
 		rsyslogMode := rsyslog.RsyslogModeForwarding
@@ -738,22 +731,6 @@ func (a *MachineAgent) startAPIWorkers(apiConn api.Connection) (_ worker.Worker,
 		})
 		if err != nil {
 			return nil, errors.Annotate(err, "cannot start machine-local storage provisioner worker")
-		}
-		return w, nil
-	})
-
-	// Check if the network management is disabled.
-	disableNetworkManagement, _ := envConfig.DisableNetworkManagement()
-	if disableNetworkManagement {
-		logger.Infof("network management is disabled")
-	}
-
-	// Start networker depending on configuration and job.
-	intrusiveMode := isNetworkManager && !disableNetworkManagement
-	runner.StartWorker("networker", func() (worker.Worker, error) {
-		w, err := newNetworker(apiConn.Networker(), agentConfig, intrusiveMode, networker.DefaultConfigBaseDir)
-		if err != nil {
-			return nil, errors.Annotate(err, "cannot start networker worker")
 		}
 		return w, nil
 	})

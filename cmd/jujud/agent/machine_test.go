@@ -1762,17 +1762,18 @@ func (s *MachineSuite) TestMachineAgentNetworkerMode(c *gc.C) {
 		c.Logf("test #%d: %s", i, test.about)
 
 		modeCh := make(chan bool, 1)
-		s.AgentSuite.PatchValue(&newNetworker, func(
+		s.AgentSuite.PatchValue(&networker.NewNetworker, func(
 			st apinetworker.State,
 			conf agent.Config,
 			intrusiveMode bool,
 			configBaseDir string,
-		) (*networker.Networker, error) {
+		) (worker.Worker, error) {
 			select {
 			case modeCh <- intrusiveMode:
 			default:
 			}
-			return networker.NewNetworker(st, conf, intrusiveMode, configBaseDir)
+
+			return newDummyWorker(), nil
 		})
 
 		attrs := coretesting.Attrs{"disable-network-management": !test.managedNetwork}
