@@ -1,0 +1,10 @@
+# Common tenets for Go
+
+include = ""
+cascade = false
+
+[[tenet]]
+  name = "lingoreviews/simpleseed"
+  driver = "binary"
+  tag = ""
+  registry = ""
