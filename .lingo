@@ -1,0 +1,11 @@
+lexicons:
+- codelingo/php
+tenets:
+- name: sql-concats
+  doc: Find all variable name ending in SQL that contain string concatenations.
+  comment: SQL query strings shouldn't be concatenated, these are susceptible to SQL injection.
+  match: |
+    <php.expr_assign[:]:
+      php.expr_variable[:]:
+        name: /.*SQL*/
+      php.expr_binaryop_concat[:]
